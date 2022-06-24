@@ -1,4 +1,4 @@
-package com.example.giphyapp.ui.home
+package com.example.giphyapp.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider

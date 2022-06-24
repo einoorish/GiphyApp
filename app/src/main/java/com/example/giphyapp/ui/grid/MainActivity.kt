@@ -1,15 +1,12 @@
-package com.example.giphyapp.ui.home
+package com.example.giphyapp.ui.grid
 
 import android.app.SearchManager
 import android.content.Context
-import android.opengl.Visibility
 import android.os.Bundle
 import android.view.*
-import android.view.View.GONE
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
-import androidx.constraintlayout.widget.ConstraintSet.GONE
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.GridLayoutManager
@@ -18,19 +15,19 @@ import com.example.giphyapp.data.api.GiphyApiHelper
 import com.example.giphyapp.data.api.ITEMS_PER_PAGE_LIMIT
 import com.example.giphyapp.data.api.RetrofitBuilder
 import com.example.giphyapp.data.response.GifObject
-import com.example.giphyapp.databinding.FragmentHomeBinding
+import com.example.giphyapp.databinding.ActivityMainBinding
+import com.example.giphyapp.ui.HomeViewModel
+import com.example.giphyapp.ui.ViewModelFactory
 import com.example.giphyapp.utils.PaginationScrollListener
 import com.example.giphyapp.utils.ResourceStatus
 
+class MainActivity : AppCompatActivity() {
 
-class HomeFragment : Fragment() {
-
-    private var _binding: FragmentHomeBinding? = null
-    private val binding get() = _binding!!
+    private lateinit var binding: ActivityMainBinding
 
     private lateinit var viewModel: HomeViewModel
 
-    private lateinit var adapter: GifsAdapter
+    private lateinit var adapter: GifsGridAdapter
     private var currentPage = 1;
     private var isLoading = false
     private var isLastPage = false
@@ -40,27 +37,26 @@ class HomeFragment : Fragment() {
     private lateinit var searchView: SearchView
     private lateinit var searchQueryTextListener: SearchView.OnQueryTextListener
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        _binding = FragmentHomeBinding.inflate(inflater, container, false)
-        val root: View = binding.root
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
 
-        viewModel = ViewModelProviders.of(this, ViewModelFactory(GiphyApiHelper(RetrofitBuilder.apiService))).get(HomeViewModel::class.java)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
-        setHasOptionsMenu(true)
+        viewModel = ViewModelProviders.of(this, ViewModelFactory(GiphyApiHelper(RetrofitBuilder.apiService)))
+            .get(HomeViewModel::class.java)
 
         setupRecyclerView()
         loadData(currentSearchPhrase, 0, true)
-
-        return root
     }
 
-    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        inflater.inflate(R.menu.search, menu)
-        val searchItem: MenuItem = menu.findItem(R.id.action_search)
-        val searchManager = requireActivity().getSystemService(Context.SEARCH_SERVICE) as SearchManager
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.search, menu)
+        val searchItem: MenuItem = menu!!.findItem(R.id.action_search)
+        val searchManager = getSystemService(Context.SEARCH_SERVICE) as SearchManager
         searchView = searchItem.actionView as SearchView
 
-        searchView.setSearchableInfo(searchManager.getSearchableInfo(requireActivity().componentName))
+        searchView.setSearchableInfo(searchManager.getSearchableInfo(componentName))
         searchQueryTextListener = object : SearchView.OnQueryTextListener {
             override fun onQueryTextChange(newText: String?): Boolean = true
 
@@ -71,7 +67,7 @@ class HomeFragment : Fragment() {
             }
         }
         searchView.setOnQueryTextListener(searchQueryTextListener)
-        super.onCreateOptionsMenu(menu, inflater)
+        return super.onCreateOptionsMenu(menu)
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -82,8 +78,8 @@ class HomeFragment : Fragment() {
         return super.onOptionsItemSelected(item)
     }
 
-    fun loadData(searchPhrase: String, offset: Int, isNewSearchData:Boolean){
-        viewModel.getGifs(searchPhrase, offset).observe(viewLifecycleOwner, Observer {
+    private fun loadData(searchPhrase: String, offset: Int, isNewSearchData:Boolean){
+        viewModel.getGifs(searchPhrase, offset).observe(this, Observer {
             it?.let { resource ->
                 when (resource.status) {
                     ResourceStatus.SUCCESS -> {
@@ -94,7 +90,7 @@ class HomeFragment : Fragment() {
                         }
                     }
                     ResourceStatus.ERROR -> {
-                        Toast.makeText(this.context, it.message, Toast.LENGTH_LONG).show()
+                        Toast.makeText(this, it.message, Toast.LENGTH_LONG).show()
                     }
                     ResourceStatus.LOADING -> {
                         if (isNewSearchData)
@@ -106,7 +102,7 @@ class HomeFragment : Fragment() {
     }
 
     private fun setupRecyclerView() {
-        val layoutManager = GridLayoutManager(context,2)
+        val layoutManager = GridLayoutManager(this,2)
         layoutManager.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
             override fun getSpanSize(position: Int): Int {
                 if(adapter.getItemViewType(position) == adapter.FOOTER_VIEW)
@@ -128,7 +124,7 @@ class HomeFragment : Fragment() {
             override fun isLastPage(): Boolean = isLastPage
         })
 
-        adapter = GifsAdapter(arrayListOf())
+        adapter = GifsGridAdapter(arrayListOf())
         binding.rvAll.adapter = adapter
     }
 
@@ -136,25 +132,21 @@ class HomeFragment : Fragment() {
     private fun addToList(gifs: List<GifObject>, isNewSearchData: Boolean) {
         adapter.apply{
             // footer is always the last element, so it should be removed before pushing new items
-            adapter.removeLoadingFooter()
+            removeLoadingFooter()
 
             if(isNewSearchData) {
-                notifyItemRangeRemoved(0, adapter.getCurrentNumOfGifs());
+                notifyItemRangeRemoved(0, getCurrentNumOfGifs());
                 addNewGifs(gifs)
             } else addNextGifs(gifs)
 
-            if(adapter.getCurrentNumOfGifs() < totalCountOfGifs){
+            if(getCurrentNumOfGifs() < totalCountOfGifs){
                 isLastPage = false
-                adapter.addLoadingFooter()
+                addLoadingFooter()
             } else isLastPage = true
 
-            adapter.notifyItemRangeInserted(adapter.itemCount, gifs.size - 1);
+            notifyItemRangeInserted(itemCount, gifs.size - 1);
             isLoading = false
         }
     }
 
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
-    }
 }

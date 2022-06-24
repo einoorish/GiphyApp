@@ -1,11 +1,9 @@
-package com.example.giphyapp.ui.home
+package com.example.giphyapp.ui
 
 import androidx.lifecycle.*
 import com.example.giphyapp.data.repository.MainRepository
-import com.example.giphyapp.data.response.ApiResponse
 import com.example.giphyapp.utils.Resource
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 class HomeViewModel(private val mainRepository: MainRepository) : ViewModel() {
 
