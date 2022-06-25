@@ -1,48 +1,23 @@
 package com.example.giphyapp.ui.grid
 
-import android.content.Intent
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
-import com.bumptech.glide.Glide
-import com.example.giphyapp.R
-import com.example.giphyapp.data.response.DownsampledImageURL
-import com.example.giphyapp.data.response.GifObject
-import com.example.giphyapp.ui.viewpager.ViewPagerActivity
+import com.example.giphyapp.data.model.GifObject
+import com.example.giphyapp.databinding.GifItemBinding
 
 
-class GifsGridAdapter(private val gifs: ArrayList<GifObject>) : RecyclerView.Adapter<ViewHolder>() {
+class GifsGridAdapter(private val gifs: ArrayList<GifObject>, private val onLongClick: (url: String) -> Unit) : RecyclerView.Adapter<ViewHolder>() {
     val FOOTER_VIEW = 1
     val DATA_VIEW = 0
     private var isLoadingAdded = false
 
-    class FooterViewHolder(itemView: View) : ViewHolder(itemView)
-
-    class DataViewHolder(itemView: View, private val gifs: ArrayList<String>) : ViewHolder(itemView) {
-        fun bind(gif: DownsampledImageURL, position: Int) {
-            itemView.apply {
-                Glide.with(itemView.context)
-                    .load(gif.url)
-                    .into(itemView.findViewById(R.id.iv_gif))
-
-                setOnClickListener {
-                    val i = Intent(context, ViewPagerActivity::class.java).apply {
-                        putExtra("id", position)
-                        putStringArrayListExtra("gif_urls", gifs)
-                    }
-                    context.startActivity(i)
-                }
-            }
-        }
-    }
-
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         if (viewType == FOOTER_VIEW) {
-            return FooterViewHolder((LayoutInflater.from(parent.context).inflate(R.layout.loading_item, parent, false)))
+            return FooterViewHolder(GifItemBinding.inflate(LayoutInflater.from(parent.context), parent, false))
         } else {
-            return DataViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.gif_item, parent, false), getGifUrls())
+            return DataViewHolder(GifItemBinding.inflate(LayoutInflater.from(parent.context), parent, false), ::getGifUrls)
         }
     }
 
@@ -58,10 +33,9 @@ class GifsGridAdapter(private val gifs: ArrayList<GifObject>) : RecyclerView.Ada
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         if (holder is DataViewHolder) {
             val vh = holder as DataViewHolder
-            vh.bind(gifs[position].images.downsampledImage, position)
+            vh.bind(gifs[position].images.downsampledImage, position, onLongClick)
         }
     }
-
 
     fun addLoadingFooter() {
         gifs.add(GifObject())
@@ -97,6 +71,9 @@ class GifsGridAdapter(private val gifs: ArrayList<GifObject>) : RecyclerView.Ada
         for(g in gifs){
             gifUrls.add(g.images.originalImage.url)
         }
+
+        if(isLoadingAdded) gifUrls.removeAt(gifUrls.size - 1)
+
         return gifUrls
     }
 }

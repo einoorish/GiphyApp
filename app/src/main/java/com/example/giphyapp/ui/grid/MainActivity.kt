@@ -4,7 +4,6 @@ import android.app.SearchManager
 import android.content.Context
 import android.os.Bundle
 import android.view.*
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
 import androidx.lifecycle.Observer
@@ -14,12 +13,13 @@ import com.example.giphyapp.R
 import com.example.giphyapp.data.api.GiphyApiHelper
 import com.example.giphyapp.data.api.ITEMS_PER_PAGE_LIMIT
 import com.example.giphyapp.data.api.RetrofitBuilder
-import com.example.giphyapp.data.response.GifObject
+import com.example.giphyapp.data.database.RoomDatabaseBuilder
+import com.example.giphyapp.data.repository.MainRepository.Companion.DEFAULT_SEARCH_PHRASE
+import com.example.giphyapp.data.model.GifObject
 import com.example.giphyapp.databinding.ActivityMainBinding
 import com.example.giphyapp.ui.HomeViewModel
 import com.example.giphyapp.ui.ViewModelFactory
 import com.example.giphyapp.utils.PaginationScrollListener
-import com.example.giphyapp.utils.ResourceStatus
 
 class MainActivity : AppCompatActivity() {
 
@@ -28,10 +28,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var viewModel: HomeViewModel
 
     private lateinit var adapter: GifsGridAdapter
-    private var currentPage = 1;
+    private var currentPage = 1
     private var isLoading = false
     private var isLastPage = false
-    private var currentSearchPhrase = "hi"
+    private var currentSearchPhrase = DEFAULT_SEARCH_PHRASE
     private var totalCountOfGifs = 0L
 
     private lateinit var searchView: SearchView
@@ -43,12 +43,16 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        viewModel = ViewModelProviders.of(this, ViewModelFactory(GiphyApiHelper(RetrofitBuilder.apiService)))
+        viewModel = ViewModelProviders.of(
+                this,
+                ViewModelFactory(GiphyApiHelper(RetrofitBuilder.apiService),
+                RoomDatabaseBuilder.buildDatabase(this)))
             .get(HomeViewModel::class.java)
 
         setupRecyclerView()
         loadData(currentSearchPhrase, 0, true)
     }
+
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.search, menu)
@@ -81,28 +85,16 @@ class MainActivity : AppCompatActivity() {
     private fun loadData(searchPhrase: String, offset: Int, isNewSearchData:Boolean){
         viewModel.getGifs(searchPhrase, offset).observe(this, Observer {
             it?.let { resource ->
-                when (resource.status) {
-                    ResourceStatus.SUCCESS -> {
-                        binding.rvAll.visibility = View.VISIBLE
-                        resource.data?.let { response ->
-                            totalCountOfGifs = response.pagination.count
-                            addToList(response.gifs, isNewSearchData)
-                        }
-                    }
-                    ResourceStatus.ERROR -> {
-                        Toast.makeText(this, it.message, Toast.LENGTH_LONG).show()
-                    }
-                    ResourceStatus.LOADING -> {
-                        if (isNewSearchData)
-                            binding.rvAll.visibility = View.GONE
-                    }
+                resource.let { response ->
+                    totalCountOfGifs = response.pagination.count
+                    addToList(response.gifs, isNewSearchData)
                 }
             }
         })
     }
 
     private fun setupRecyclerView() {
-        val layoutManager = GridLayoutManager(this,2)
+        val layoutManager = GridLayoutManager(this, resources.getInteger(R.integer.columns))
         layoutManager.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
             override fun getSpanSize(position: Int): Int {
                 if(adapter.getItemViewType(position) == adapter.FOOTER_VIEW)
@@ -111,7 +103,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
         binding.rvAll.layoutManager = layoutManager
-
         binding.rvAll.addOnScrollListener(object: PaginationScrollListener(layoutManager){
             override fun loadMoreItems() {
                 isLoading = true
@@ -124,10 +115,9 @@ class MainActivity : AppCompatActivity() {
             override fun isLastPage(): Boolean = isLastPage
         })
 
-        adapter = GifsGridAdapter(arrayListOf())
+        adapter = GifsGridAdapter(arrayListOf()) { url -> viewModel.addGifToDeleted(url) }
         binding.rvAll.adapter = adapter
     }
-
 
     private fun addToList(gifs: List<GifObject>, isNewSearchData: Boolean) {
         adapter.apply{
@@ -148,5 +138,4 @@ class MainActivity : AppCompatActivity() {
             isLoading = false
         }
     }
-
 }

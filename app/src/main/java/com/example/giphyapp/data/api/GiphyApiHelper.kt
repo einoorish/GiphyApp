@@ -1,6 +1,6 @@
 package com.example.giphyapp.data.api
 
-import com.example.giphyapp.data.response.ApiResponse
+import com.example.giphyapp.data.model.ApiResponse
 
 class GiphyApiHelper(private val apiService: GiphyApiService) {
 
