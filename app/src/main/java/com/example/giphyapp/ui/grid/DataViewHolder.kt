@@ -17,14 +17,15 @@ import com.example.giphyapp.R
 import com.example.giphyapp.data.model.DownsampledImageURL
 import com.example.giphyapp.ui.viewpager.ViewPagerActivity
 import com.bumptech.glide.request.target.Target
+import com.example.giphyapp.data.model.GifObject
 import com.example.giphyapp.databinding.GifItemBinding
 
 class DataViewHolder(private val binding: GifItemBinding, private val getGifUrls: () -> ArrayList<String>): RecyclerView.ViewHolder(binding.root){
 
-    fun bind(gif: DownsampledImageURL, position: Int, onLongClick: (url: String) -> Unit) {
+    fun bind(gif: GifObject, position: Int, onLongClick: (gifObject: GifObject) -> Unit) {
         val itemView = binding.root
         Glide.with(itemView.context)
-            .load(gif.url)
+            .load(gif.images.downsampledImage.url)
             .override(Target.SIZE_ORIGINAL, Target.SIZE_ORIGINAL)
             .listener(object : RequestListener<Drawable> {
                 override fun onLoadFailed(e: GlideException?, model: Any?, target: Target<Drawable>?, isFirstResource: Boolean): Boolean {
@@ -44,12 +45,12 @@ class DataViewHolder(private val binding: GifItemBinding, private val getGifUrls
         itemView.setOnLongClickListener{showPopup(itemView, gif, onLongClick)}
     }
 
-    private fun showPopup(itemView: View, gif: DownsampledImageURL, onLongClick: (url: String) -> Unit): Boolean {
+    private fun showPopup(itemView: View, gif: GifObject, onLongClick: (gifObject: GifObject) -> Unit): Boolean {
         val popupMenu = PopupMenu(ContextThemeWrapper(itemView.context, R.style.PopupMenu), itemView)
         popupMenu.inflate(R.menu.delete)
         popupMenu.setOnMenuItemClickListener {
             if(it.itemId == R.id.action_delete) 
-                onLongClick(gif.url)
+                onLongClick(gif)
             true
         }
         popupMenu.show()

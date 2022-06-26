@@ -1,11 +1,7 @@
 package com.example.giphyapp.utils
 
 import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.StaggeredGridLayoutManager
-import com.example.giphyapp.data.api.ITEMS_PER_PAGE_LIMIT
-
 
 abstract class PaginationScrollListener(private val layoutManager: GridLayoutManager): RecyclerView.OnScrollListener() {
 
@@ -22,7 +18,6 @@ abstract class PaginationScrollListener(private val layoutManager: GridLayoutMan
             }
         }
     }
-
 
     abstract fun loadMoreItems()
 

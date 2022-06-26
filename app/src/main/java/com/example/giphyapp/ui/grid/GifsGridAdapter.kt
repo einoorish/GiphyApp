@@ -8,7 +8,7 @@ import com.example.giphyapp.data.model.GifObject
 import com.example.giphyapp.databinding.GifItemBinding
 
 
-class GifsGridAdapter(private val gifs: ArrayList<GifObject>, private val onLongClick: (url: String) -> Unit) : RecyclerView.Adapter<ViewHolder>() {
+class GifsGridAdapter(private val gifs: ArrayList<GifObject>, private val onLongClick: (gifObject: GifObject) -> Unit) : RecyclerView.Adapter<ViewHolder>() {
     val FOOTER_VIEW = 1
     val DATA_VIEW = 0
     private var isLoadingAdded = false
@@ -33,7 +33,7 @@ class GifsGridAdapter(private val gifs: ArrayList<GifObject>, private val onLong
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         if (holder is DataViewHolder) {
             val vh = holder as DataViewHolder
-            vh.bind(gifs[position].images.downsampledImage, position, onLongClick)
+            vh.bind(gifs[position], position, onLongClick)
         }
     }
 

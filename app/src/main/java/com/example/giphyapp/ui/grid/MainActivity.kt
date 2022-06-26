@@ -4,34 +4,32 @@ import android.app.SearchManager
 import android.content.Context
 import android.os.Bundle
 import android.view.*
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
 import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.GridLayoutManager
 import com.example.giphyapp.R
-import com.example.giphyapp.data.api.GiphyApiHelper
-import com.example.giphyapp.data.api.ITEMS_PER_PAGE_LIMIT
-import com.example.giphyapp.data.api.RetrofitBuilder
-import com.example.giphyapp.data.database.RoomDatabaseBuilder
-import com.example.giphyapp.data.repository.MainRepository.Companion.DEFAULT_SEARCH_PHRASE
 import com.example.giphyapp.data.model.GifObject
 import com.example.giphyapp.databinding.ActivityMainBinding
 import com.example.giphyapp.ui.HomeViewModel
-import com.example.giphyapp.ui.ViewModelFactory
 import com.example.giphyapp.utils.PaginationScrollListener
+import dagger.hilt.android.AndroidEntryPoint
 
+const val ITEMS_PER_PAGE_LIMIT = 12
+
+@AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
 
-    private lateinit var viewModel: HomeViewModel
+    private val viewModel: HomeViewModel by viewModels()
 
     private lateinit var adapter: GifsGridAdapter
     private var currentPage = 1
     private var isLoading = false
     private var isLastPage = false
-    private var currentSearchPhrase = DEFAULT_SEARCH_PHRASE
+    private var currentSearchPhrase = "hi"
     private var totalCountOfGifs = 0L
 
     private lateinit var searchView: SearchView
@@ -42,12 +40,6 @@ class MainActivity : AppCompatActivity() {
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
-        viewModel = ViewModelProviders.of(
-                this,
-                ViewModelFactory(GiphyApiHelper(RetrofitBuilder.apiService),
-                RoomDatabaseBuilder.buildDatabase(this)))
-            .get(HomeViewModel::class.java)
 
         setupRecyclerView()
         loadData(currentSearchPhrase, 0, true)
@@ -115,7 +107,7 @@ class MainActivity : AppCompatActivity() {
             override fun isLastPage(): Boolean = isLastPage
         })
 
-        adapter = GifsGridAdapter(arrayListOf()) { url -> viewModel.addGifToDeleted(url) }
+        adapter = GifsGridAdapter(arrayListOf()) { gif -> viewModel.addGifToDeleted(gif) }
         binding.rvAll.adapter = adapter
     }
 

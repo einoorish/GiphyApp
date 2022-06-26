@@ -3,7 +3,9 @@ plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
     id 'kotlin-kapt'
+    id 'dagger.hilt.android.plugin'
 }
+
 
 android {
     compileSdk 32
@@ -70,4 +72,8 @@ dependencies {
     implementation 'com.github.bumptech.glide:annotations:4.11.0'
     implementation "com.github.bumptech.glide:okhttp3-integration:4.11.0"
     annotationProcessor 'com.github.bumptech.glide:compiler:4.11.0'
+
+    // hilt
+    implementation 'com.google.dagger:hilt-android:2.42'
+    kapt 'com.google.dagger:hilt-compiler:2.42'
 }
